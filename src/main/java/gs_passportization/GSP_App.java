@@ -95,17 +95,19 @@ public class GSP_App {
 		    // Paths.get(uri) handles path conversion safely across all operating systems.
 		    Path currentPath = Paths.get(uri);
 
-		    // If running in an IDE/Maven context, navigate up from the 'target' directory.
 		    String pathStr = currentPath.toString();
 		    if (!pathStr.contains(".jar")) {
-		        // Use File.separator to maintain Linux/macOS compatibility.
+		    	// If it’s a JAR, take its parent directory (the target folder).
 		        pathStr = pathStr.substring(0, pathStr.lastIndexOf(java.io.File.separator + "target"));
-		    }
+		    } if (pathStr.contains(java.io.File.separator + "target")) {
+			     // If running in an IDE/Maven context, navigate up from the 'target' directory.
+			     pathStr = pathStr.substring(0, pathStr.lastIndexOf(java.io.File.separator + "target"));
+			 }
 
 		    // Construct cross-platform log file paths.
-		    String commonsLog = pathStr + java.io.File.separator + "logs" + java.io.File.separator + "commons.log";
-		    String p6spyLog = pathStr + java.io.File.separator + "logs" + java.io.File.separator + "p6spy.log";
-
+		    String commonsLog = Paths.get(pathStr, "logs", "commons.log").toString();
+			String p6spyLog = Paths.get(pathStr, "logs", "p6spy.log").toString();
+		    
 		    System.out.println("commonLogFilename -> " + commonsLog);
 		    System.setProperty("commonLogFilename", commonsLog);
 		    
@@ -149,15 +151,6 @@ public class GSP_App {
 		    System.out.println("\t" + key + " -> " + props.get(key));
 		}
 		
-		
-        // Print the runtime classpath entries for debugging.
-        System.out.println("Runtime classpath -> ");
-        String classPath = System.getProperty("java.class.path");
-        String[] classpathEntries = classPath.split(File.pathSeparator);
-        for (String st: classpathEntries) {
-            System.out.println("\t" + st);
-        }
-
         try {
             
             // Load credentials from properties.yaml using Jackson YAML Dataformat
@@ -297,7 +290,7 @@ public class GSP_App {
                 });
                 
                 // Display the formatted response layout for internal telemetry diagnostics
-                System.out.println("\nResponse body:\n" + responseBody.replace("},", "},\n"));
+                //System.out.println("\nResponse body:\n" + responseBody.replace("},", "},\n"));
 
                 // Parse the verified JSON payload into intermediate transfer objects
                 rrDataList = parse_json(responseBody);
@@ -318,8 +311,9 @@ public class GSP_App {
                 }
 
                 // Output mapped domain identities to system logs for audit trail tracking
-                rrEntities.stream().forEach(x -> System.out.println(x.getId() + "; " +
+                /*rrEntities.stream().forEach(x -> System.out.println(x.getId() + "; " +
                         x.getAddress() + "; " + x.getDistrict()));
+                */
 
                 // Forward structural entities to the database batch ingestion layer
                 writeParsedJSONToDatabase(rrEntities);

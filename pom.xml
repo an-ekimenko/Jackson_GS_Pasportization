@@ -147,7 +147,7 @@
                     <archive>
                         <manifest>
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                            <mainClass>my.jackson.Main</mainClass>
+                            <mainClass>gs_passportization.GSP_App</mainClass>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>../../${lib.dir}</classpathPrefix>
                         </manifest>
