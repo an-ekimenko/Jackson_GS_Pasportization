@@ -11,6 +11,6 @@ logs/
 .settings/
 .factorypath
 
-#src/main/resources/Hibernate.cfg.xml
+src/main/resources/Hibernate.cfg.xml
 
 #src/main/resources/properties.yaml
