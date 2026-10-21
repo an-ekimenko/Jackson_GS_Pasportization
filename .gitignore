@@ -13,4 +13,4 @@ logs/
 
 src/main/resources/Hibernate.cfg.xml
 
-#src/main/resources/properties.yaml
+src/main/resources/properties.yaml
