@@ -3,9 +3,10 @@
          xsi:schemaLocation="http://apache.org https://apache.org">
     <modelVersion>4.0.0</modelVersion>
     <groupId>jackson_json</groupId>
-    <artifactId>JacksonJson_RepairRequests</artifactId>
+    <artifactId>Jackson_GS_Passportization</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>Jackson_RepairRequests</name>
+    <name>Jackson_GS_Passportization</name>
+
   
     <properties>
         <log4j2.version>3.0.0-beta2</log4j2.version>
