@@ -1,5 +1,5 @@
 gs_passportization-api:
-  endpoint: https://bnpassport-map-stg.it.beloil.by/bnpassport/api/get_stations
+  endpoint: YOUR_ENDPOINT
   auth:
     type: none # Options - basic, token, none
     # Used only for type: basic

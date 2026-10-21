@@ -12,6 +12,9 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLContext;
 
@@ -295,9 +298,18 @@ public class GSP_App {
                 // Parse the verified JSON payload into intermediate transfer objects
                 rrDataList = parse_json(responseBody);
 
-                // Transform raw dataset structures into persistent domain models via stream processing
+                
+                /**
+                 * Transform raw data set structures into persistent domain models via stream processing, 
+                 * leaving only objects with unique IDs in the list.
+                 */
                 if (rrDataList.size() > 0) {
+                    //  Initialize a thread-safe Set to track the IDs that have already been encountered.
+                    Set<Integer> seenIds = ConcurrentHashMap.newKeySet();
+
                     rrEntities = rrDataList.stream()
+                        // Filter the list, keeping only those objects whose ID has not been encountered before.
+                        .filter(o -> seenIds.add(o.getId())) 
                         .map(o -> new GSP_Entity(
                                 o.getId(),
                                 "", // Gas station description field defaults to empty string
@@ -307,9 +319,9 @@ public class GSP_App {
                                 o.getLongitude(),
                                 o.getDistrict()
                         ))
-                        .collect(java.util.stream.Collectors.toList());
+                        .collect(Collectors.toList());
                 }
-
+                
                 // Output mapped domain identities to system logs for audit trail tracking
                 /*rrEntities.stream().forEach(x -> System.out.println(x.getId() + "; " +
                         x.getAddress() + "; " + x.getDistrict()));
