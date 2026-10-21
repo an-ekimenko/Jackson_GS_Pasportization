@@ -10,7 +10,7 @@ The **Jackson_GS_Pasportization** application automates the extraction, parsing,
 
 * **Resilient Enterprise Networking:** Utilizes **Apache HttpClient 5** with a built-in connection pool (`PoolingHttpClientConnectionManager`), providing a solid foundation for robust, high-performance web service interactions.
 * **Automated Fault-Tolerance:** Replaces fragile manual loops with a declarative `DefaultHttpRequestRetryStrategy` executing an exponential backoff algorithm (up to 5 attempts, starting at 30 seconds) to survive temporary network failures.
-* **On-The-Fly SSL Certificate Management:** Features a custom KeyStoreManager that programmatically intercepts remote certificate chains during SSL handshakes and updates the local JVM `cacerts` file. It hot-swaps the memory-resident `SSLContext` dynamically without requiring an application restart.
+* **On-The-Fly SSL Certificate Management:** Features an advanced `KeyStoreManager` that programmatically intercepts remote certificate chains during SSL handshakes and updates the local JVM `cacerts` file. It hot-swaps the memory-resident `SSLContext` dynamically without requiring an application restart.
 * **Robust JSON Deserialization:** Configured via Jackson's `ObjectMapper` to gracefully ignore undeclared or unknown API properties (`FAIL_ON_UNKNOWN_PROPERTIES`), preventing runtime crashes during upstream schema updates.
 * **Defensive Parsing & Stream Transformation:** Employs a custom `GSP_DataDeserializer` registered via a `SimpleModule` for type-safe mapping. Uses Java Streams to map raw DTO payload arrays into persistent Hibernate entities.
 * **High-Performance Staging Persistence:** Executes optimized, transaction-aware batch operations (`saveOrUpdateBatch`) directly through the DAO layer to minimize round-trips to the MS SQL database.
@@ -61,32 +61,38 @@ The project follows a clean, layered architecture designed for deterministic bat
 
 The application dynamically adjusts its behavior based on external configuration profiles. You must configure the environment before deployment:
 
-### 1. API Authentication (`properties.yaml`)
-Configure your target authentication strategy using one of the structural schemas below:
+### 1. API Configuration (`properties.yaml`)
+Create a file named `properties.yaml` inside the `src/main/resources/` directory and configure your target API endpoint along with the selected authentication strategy using one of the schemas below:
 
-#### Basic Authentication
+#### Basic Authentication Profile
 ```yaml
-auth:
-  type: "basic"
-  username: "your_username"
-  password: "your_password"
+gs_passportization-api:
+  endpoint: "YOUR_ENDPOINT_URL"
+  auth:
+    type: "basic" # Options: basic, token, none
+    username: "your_username"
+    password: "your_password"
 ```
 
-#### Token Authentication
+#### Token Authentication Profile
 ```yaml
-auth:
-  type: "token"
-  token: "your_bearer_token_here"
+gs_passportization-api:
+  endpoint: "YOUR_ENDPOINT_URL"
+  auth:
+    type: "token" # Options: basic, token, none
+    token: "your_bearer_token_here"
 ```
 
-#### Unauthenticated Access
+#### Unauthenticated Public Profile
 ```yaml
-auth:
-  type: "none"
+gs_passportization-api:
+  endpoint: "YOUR_ENDPOINT_URL"
+  auth:
+    type: "none" # Options: basic, token, none
 ```
 
 ### 2. Database Connection (`Hibernate.cfg.xml`)
-The repository includes a template file named `Hibernate.cfg2.xml` containing the configuration schema for database connection pooling and P6Spy integration.
+The repository includes a template file named `Hibernate.cfg2.xml` inside `src/main/resources/` containing the configuration schema for database connection pooling and P6Spy integration.
 
 To provision your target environment:
 1. Duplicate `Hibernate.cfg2.xml` and rename it to `Hibernate.cfg.xml`.
@@ -103,13 +109,14 @@ To provision your target environment:
 ## Deployment & Running
 
 1. **Configure Infrastructure Properties:** Set up your target database credentials, API endpoint parameters, authentication metadata, and P6Spy properties within the configuration files as described in the configuration section above.
-2. **Build the Application:** Execute the Maven package phase to compile the code and assemble the executable fat JAR asset:
+2. **Build the Application:** Execute the Maven package phase. This compiles the code, builds the decoupled core application JAR, and automatically runs the `maven-dependency-plugin` to isolate external dependencies into the external centralized directory:
    ```bash
    mvn clean package
    ```
-3. **Execute the Application:** Run the compiled JAR file using the Java CLI. The internal logging engine automatically calculates safe, non-nested storage destinations relative to your current execution scope:
+3. **Execute the Application:** Run the compiled JAR file natively using the Java CLI. Thanks to the automated manifest configuration in `pom.xml`, the classpath linking to the shared `../dependencies/` folder is resolved out of the box, and the internal logging engine dynamically manages its output file storage targets relative to your current execution scope:
    ```bash
-   java -jar target/JacksonJson_RepairRequests-0.0.1-SNAPSHOT.jar
+   java -jar target/Jackson_GS_Passportization-0.0.1-SNAPSHOT.jar
    ```
+
 
    
