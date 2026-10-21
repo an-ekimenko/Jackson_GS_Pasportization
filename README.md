@@ -16,6 +16,22 @@ The **Jackson_GS_Pasportization** application automates the extraction, parsing,
 * **High-Performance Staging Persistence:** Executes optimized, transaction-aware batch operations (`saveOrUpdateBatch`) directly through the DAO layer to minimize round-trips to the MS SQL database.
 * **Pluggable Multi-Schema Authentication:** Out-of-the-box support for `basic`, `token`, or `none` API authorization schemes, dynamically driven by external configuration files.
 
+## Shared Dependency Architecture
+
+To eliminate library redundancy and optimize infrastructure disk usage across multiple similar integration applications, this project adopts a decoupled shared-dependency deployment model:
+
+* **Centralized Dependencies:** All required external runtime JAR libraries are compiled and isolated into a dedicated `dependencies` directory.
+* **Directory Layout:** The `dependencies` folder is located **one level above** the application root directory (`Jackson_GS_Pasportization`), serving as a common binary store for neighboring integration modules:
+  ```text
+  ├── shared-environment-root/
+  │   ├── dependencies/                 <-- Shared runtime external libraries (.jar)
+  │   └── Jackson_GS_Pasportization/    <-- This application root directory
+  │       ├── src/
+  │       ├── target/
+  │       └── pom.xml
+  ```
+* **Classpath Decoupling:** The compiled application artifact excludes third-party binaries inside its own structure, dynamically linking against the shared directory at runtime via classpath definitions.
+  
 ## Project Structure & Configuration
 
 The project follows a clean, layered architecture designed for deterministic batch processing:
