@@ -16,13 +16,29 @@ The **Jackson_GS_Pasportization** application automates the extraction, parsing,
 * **High-Performance Staging Persistence:** Executes optimized, transaction-aware batch operations (`saveOrUpdateBatch`) directly through the DAO layer to minimize round-trips to the MS SQL database.
 * **Pluggable Multi-Schema Authentication:** Out-of-the-box support for `basic`, `token`, or `none` API authorization schemes, dynamically driven by external configuration files.
 
+## Shared Dependency Architecture
+
+To eliminate library redundancy and optimize infrastructure disk usage across multiple similar integration applications, this project adopts a decoupled shared-dependency deployment model:
+
+* **Centralized Dependencies:** All required external runtime JAR libraries are compiled and isolated into a dedicated `dependencies` directory.
+* **Directory Layout:** The `dependencies` folder is located **one level above** the application root directory (`Jackson_GS_Pasportization`), serving as a common binary store for neighboring integration modules:
+  ```text
+  ├── shared-environment-root/
+  │   ├── dependencies/                 <-- Shared runtime external libraries (.jar)
+  │   └── Jackson_GS_Pasportization/    <-- This application root directory
+  │       ├── src/
+  │       ├── target/
+  │       └── pom.xml
+  ```
+* **Classpath Decoupling:** The compiled application artifact excludes third-party binaries inside its own structure, dynamically linking against the shared directory at runtime via classpath definitions.
+  
 ## Project Structure & Configuration
 
 The project follows a clean, layered architecture designed for deterministic batch processing:
 
 ### Configuration
 * `gs_passportization.config.GSPApiConfig` — A DTO class for deserializing API connection parameters from the YAML configuration file using Jackson. Includes a nested structure for flexible authentication handling.
-* `gs_passportization.LogConfigUtil` — A utility class responsible for dynamic runtime initialization and configuration of the Log4j2/SLF4J logging subsystem.
+* `gs_passportization.LogConfigUtil` — A utility class responsible for dynamic runtime initialization of the Log4j2/SLF4J logging subsystem. It automatically evaluates the execution path (IDE context vs. standalone JAR) to decouple log generation from internal deployment artifacts.
 
 ### Domain Model & Data Transfer (DTO)
 * `gs_passportization.model.GSP_Entity` — A Hibernate entity class representing the target `GS_Pasportization` database table.
@@ -35,6 +51,9 @@ The project follows a clean, layered architecture designed for deterministic bat
 ### Persistence Layer
 * `gs_passportization.hibernate.GSP_DAO` — A helper DAO class that manages transactional batch database operations (`merge`, `flush`, `clear`, `saveOrUpdateBatch`) to safely persist data without memory leaks.
 * `gs_passportization.util.HibernateUtil` — A utility class for managing the thread-safe Hibernate `SessionFactory` singleton instance using safe lazy initialization.
+
+### Generated Artifacts
+* `logs/` — Created automatically in the application root directory during runtime. Contains standalone execution logs (`commons.log`) and database interaction telemetry (`p6spy.log`).
 
 ---
 
@@ -84,14 +103,13 @@ To provision your target environment:
 ## Deployment & Running
 
 1. **Configure Infrastructure Properties:** Set up your target database credentials, API endpoint parameters, authentication metadata, and P6Spy properties within the configuration files as described in the configuration section above.
-2. **Build the Application:** Execute the Maven package phase to compile the code and assemble the executable assets:
+2. **Build the Application:** Execute the Maven package phase to compile the code and assemble the executable fat JAR asset:
    ```bash
    mvn clean package
    ```
-3. **Execute the Application:** Run the generated JAR file using the Java CLI. Since runtime dependencies are detached and stored in the external `dependencies` directory (located one level above the application root), you must explicitly define the execution classpath via the `-cp` flag. Additionally, pass the runtime properties required by the logging subsystem:
+3. **Execute the Application:** Run the compiled JAR file using the Java CLI. The internal logging engine automatically calculates safe, non-nested storage destinations relative to your current execution scope:
    ```bash
-   java -Dlog4j.configurationFile=src/main/resources/Log4j2.xml \
-        -cp "target/Jackson_GS_Pasportization-1.0-SNAPSHOT.jar;../dependencies/*" \
-        gs_passportization.GSP_App
+   java -jar target/JacksonJson_RepairRequests-0.0.1-SNAPSHOT.jar
    ```
-   *Note: Use a semicolon `;` as a classpath separator on Windows environments, or a colon `:` if running on Linux/Unix systems (`"target/Jackson_GS_Pasportization-1.0-SNAPSHOT.jar:../dependencies/*"`).*
+
+   
