@@ -2,11 +2,11 @@
 
 **Extracts, parses, and stores data about gas station attributes from a web API into an MS SQL staging environment for SAP BW/4HANA.**
 
-## Description
+## 📋 Description
 
 The **Jackson_GS_Pasportization** application automates the extraction, parsing, and storage of gas station complex attributes (such as latitude, longitude, address, available fuel brands, and service request data for station equipment). The application retrieves data in JSON format from a web service, processes it, and writes the records to a target MS SQL database. This database serves as an intermediate staging area for subsequent ETL loading into **SAP BW/4HANA**.
 
-## Features
+## 🚀 Features
 
 * **Resilient Enterprise Networking:** Utilizes **Apache HttpClient 5** with a built-in connection pool (`PoolingHttpClientConnectionManager`), providing a solid foundation for robust, high-performance web service interactions.
 * **Automated Fault-Tolerance:** Replaces fragile manual loops with a declarative `DefaultHttpRequestRetryStrategy` executing an exponential backoff algorithm (up to 5 attempts, starting at 30 seconds) to survive temporary network failures.
@@ -16,7 +16,7 @@ The **Jackson_GS_Pasportization** application automates the extraction, parsing,
 * **High-Performance Staging Persistence:** Executes optimized, transaction-aware batch operations (`saveOrUpdateBatch`) directly through the DAO layer to minimize round-trips to the MS SQL database.
 * **Pluggable Multi-Schema Authentication:** Out-of-the-box support for `basic`, `token`, or `none` API authorization schemes, dynamically driven by external configuration files.
 
-## Shared Dependency Architecture
+## 🏗️ Shared Dependency Architecture
 
 To eliminate library redundancy and optimize infrastructure disk usage across multiple similar integration applications, this project adopts a decoupled shared-dependency deployment model:
 
@@ -32,71 +32,32 @@ To eliminate library redundancy and optimize infrastructure disk usage across mu
   ```
 * **Classpath Decoupling:** The compiled application artifact excludes third-party binaries inside its own structure, dynamically linking against the shared directory at runtime via classpath definitions.
   
-## Project Structure & Configuration
+## 📂 Project Structure & Configuration
 
 The project follows a clean, layered architecture designed for deterministic batch processing:
 
-### Configuration
+### ⚙️ Configuration & Security Management
+> ⚠️ **Security Note:** Real production configuration files containing plain-text credentials (`properties.yaml` and `hibernate.cfg.xml`) are strictly tracked by `.gitignore` and excluded from the Git repository to prevent accidental credential leakage. Instead, public safe templates are provided.
+
+* `properties2.yaml` — A safe template for API authorization modes, targets, and environment settings. Must be copied and renamed to `properties.yaml` locally.
+* `hibernate.cfg2.xml` — A safe template for MS SQL connection strings and Hibernate parameters. Must be copied and renamed to `hibernate.cfg.xml` locally.
 * `gs_passportization.config.GSPApiConfig` — A DTO class for deserializing API connection parameters from the YAML configuration file using Jackson. Includes a nested structure for flexible authentication handling.
 * `gs_passportization.LogConfigUtil` — A utility class responsible for dynamic runtime initialization of the Log4j2/SLF4J logging subsystem. It automatically evaluates the execution path (IDE context vs. standalone JAR) to decouple log generation from internal deployment artifacts.
 
-### Domain Model & Data Transfer (DTO)
+### 🗃️ Domain Model & Data Transfer (DTO)
 * `gs_passportization.model.GSP_Entity` — A Hibernate entity class representing the target `GS_Pasportization` database table.
 * `gs_passportization.model.GSP_Data` — A DTO class representing a gas station complex object mapped directly from the raw JSON structure.
 
-### JSON Processing & Orchestration
+### 🔄 JSON Processing & Orchestration
 * `gs_passportization.jackson_json.GSP_DataDeserializer` — A custom Jackson deserializer designed for defensive extraction of API fields, safely mapping missing or empty JSON nodes into appropriate Java objects and handling numerical overflows.
 * `gs_passportization.GSP_App` — The main entry point of the application containing the core execution orchestration flow, integrated Apache HttpClient logic, and the `main()` method.
 
-### Persistence Layer
+### 💾 Persistence Layer
 * `gs_passportization.hibernate.GSP_DAO` — A helper DAO class that manages transactional batch database operations (`merge`, `flush`, `clear`, `saveOrUpdateBatch`) to safely persist data without memory leaks.
 * `gs_passportization.util.HibernateUtil` — A utility class for managing the thread-safe Hibernate `SessionFactory` singleton instance using safe lazy initialization.
 
-### Generated Artifacts
+### 📊 Generated Artifacts
 * `logs/` — Created automatically in the application root directory during runtime. Contains standalone execution logs (`commons.log`) and database interaction telemetry (`p6spy.log`).
-
----
-
-## Environment Setup & Configuration Files
-
-The application dynamically adjusts its behavior based on external configuration profiles. You must configure the environment before deployment:
-
-### 1. API Configuration (`properties.yaml`)
-Create a file named `properties.yaml` inside the `src/main/resources/` directory and configure your target API endpoint along with the selected authentication strategy using one of the schemas below:
-
-#### Basic Authentication Profile
-```yaml
-gs_passportization-api:
-  endpoint: "YOUR_ENDPOINT_URL"
-  auth:
-    type: "basic" # Options: basic, token, none
-    username: "your_username"
-    password: "your_password"
-```
-
-#### Token Authentication Profile
-```yaml
-gs_passportization-api:
-  endpoint: "YOUR_ENDPOINT_URL"
-  auth:
-    type: "token" # Options: basic, token, none
-    token: "your_bearer_token_here"
-```
-
-#### Unauthenticated Public Profile
-```yaml
-gs_passportization-api:
-  endpoint: "YOUR_ENDPOINT_URL"
-  auth:
-    type: "none" # Options: basic, token, none
-```
-
-### 2. Database Connection (`Hibernate.cfg.xml`)
-The repository includes a template file named `Hibernate.cfg2.xml` inside `src/main/resources/` containing the configuration schema for database connection pooling and P6Spy integration.
-
-To provision your target environment:
-1. Duplicate `Hibernate.cfg2.xml` and rename it to `Hibernate.cfg.xml`.
-2. Replace credentials placeholders (`YOUR_DB_HOST`, `YOUR_DB_NAME`, `YOUR_USERNAME`, and `YOUR_PASSWORD`) with your actual staging infrastructure parameters.
 
 ---
 
@@ -105,10 +66,13 @@ To provision your target environment:
 * **Java:** JDK 8 or higher
 * **Database:** MS SQL Server
 * **Build System:** Maven (configured via `pom.xml`)
+## 💻 Deployment & Running
 
-## Deployment & Running
+1. **Prepare Environment Configurations:**
+   Since production credentials are safe from tracking via `.gitignore`, initialize your active operational profiles from the provided templates:
+   * Copy `properties.example.yaml` to a new file named `properties.yaml`, then update the target API endpoints and active authorization credentials.
+   * Copy `hibernate.cfg2.xml.example` to a new file named `hibernate.cfg.xml`, then populate it with your actual MS SQL database endpoint parameters.
 
-1. **Configure Infrastructure Properties:** Set up your target database credentials, API endpoint parameters, authentication metadata, and P6Spy properties within the configuration files as described in the configuration section above.
 2. **Build the Application:** Execute the Maven package phase. This compiles the code, builds the decoupled core application JAR, and automatically runs the `maven-dependency-plugin` to isolate external dependencies into the external centralized directory:
    ```bash
    mvn clean package
@@ -117,6 +81,4 @@ To provision your target environment:
    ```bash
    java -jar target/Jackson_GS_Passportization-0.0.1-SNAPSHOT.jar
    ```
-
-
    
